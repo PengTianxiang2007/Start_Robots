@@ -32,4 +32,5 @@ Joints = [shoulder_pan.assemble_joint(), shoulder_lift.assemble_joint(), elbow_f
 robot = rtb.DHRobot(Joints)
 
 position = robot.ikine_LM(target_position, joint_angle)
-print(position)
+print(position.q)
+print(position.residual) #评估偏差
