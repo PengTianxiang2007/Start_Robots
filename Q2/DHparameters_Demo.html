@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>改进型DH参数 (Modified DH) 交互教学</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a202c; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas-container { width: 100%; height: 100vh; }
+        .panel { background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(10px); border: 1px solid #334155; }
+        
+        /* Custom range slider styling */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
+        input[type=range]:focus { outline: none; }
+        
+        .axis-x { color: #ef4444; font-weight: bold; }
+        .axis-y { color: #22c55e; font-weight: bold; }
+        .axis-z { color: #3b82f6; font-weight: bold; }
+    </style>
+</head>
+<body class="flex">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container" class="flex-grow"></div>
+
+    <!-- UI Overlay / Controls -->
+    <div class="absolute right-0 top-0 h-full w-96 panel p-6 flex flex-col shadow-2xl z-10 overflow-y-auto">
+        <h1 class="text-2xl font-bold mb-2 text-white border-b border-gray-600 pb-2">改进型 DH 参数</h1>
+        <p class="text-sm text-gray-400 mb-6">Modified Denavit-Hartenberg (MDH) 交互演示</p>
+
+        <div class="bg-blue-900/30 border border-blue-700/50 p-3 rounded mb-6 text-sm">
+            <p class="mb-1"><strong class="text-blue-300">💡 核心概念防晕指南：</strong></p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li><span class="axis-z">Z轴 (蓝色)</span> 永远代表**电机的旋转轴** (或平移轴)。</li>
+                <li><span class="axis-x">X轴 (红色)</span> 是相邻两个Z轴之间的**公垂线**。</li>
+                <li>MDH约定：坐标系 <span class="italic">i</span> 绑定在关节 <span class="italic">i</span> 上。</li>
+            </ul>
+        </div>
+
+        <!-- Sliders -->
+        <div class="space-y-6 flex-grow">
+            <!-- a_{i-1} -->
+            <div>
+                <div class="flex justify-between mb-1">
+                    <label class="font-semibold text-red-400">a_{i-1} (连杆长度)</label>
+                    <span id="val-a" class="font-mono bg-gray-800 px-2 py-0.5 rounded text-sm">5.0</span>
+                </div>
+                <input type="range" id="slider-a" min="0" max="10" step="0.1" value="5">
+                <p class="text-xs text-gray-400 mt-1">沿 <span class="axis-x">X_{i-1}</span> 轴，从 Z_{i-1} 移动到 Z_i 的距离。</p>
+            </div>
+
+            <!-- alpha_{i-1} -->
+            <div>
+                <div class="flex justify-between mb-1">
+                    <label class="font-semibold text-red-400">α_{i-1} (连杆扭角)</label>
+                    <span id="val-alpha" class="font-mono bg-gray-800 px-2 py-0.5 rounded text-sm">0°</span>
+                </div>
+                <input type="range" id="slider-alpha" min="-180" max="180" step="1" value="0">
+                <p class="text-xs text-gray-400 mt-1">绕 <span class="axis-x">X_{i-1}</span> 轴旋转，使 Z_{i-1} 轴与 Z_i 轴平行。</p>
+            </div>
+
+            <!-- d_i -->
+            <div class="pt-4 border-t border-gray-700">
+                <div class="flex justify-between mb-1">
+                    <label class="font-semibold text-blue-400">d_i (连杆偏移)</label>
+                    <span id="val-d" class="font-mono bg-gray-800 px-2 py-0.5 rounded text-sm">2.0</span>
+                </div>
+                <input type="range" id="slider-d" min="-5" max="5" step="0.1" value="2">
+                <p class="text-xs text-gray-400 mt-1">沿 <span class="axis-z">Z_i</span> 轴，从 X_{i-1} 移动到 X_i 的距离。</p>
+            </div>
+
+            <!-- theta_i -->
+            <div>
+                <div class="flex justify-between mb-1">
+                    <label class="font-semibold text-blue-400">θ_i (关节转角)</label>
+                    <span id="val-theta" class="font-mono bg-gray-800 px-2 py-0.5 rounded text-sm">45°</span>
+                </div>
+                <input type="range" id="slider-theta" min="-180" max="180" step="1" value="45">
+                <p class="text-xs text-gray-400 mt-1">绕 <span class="axis-z">Z_i</span> 轴旋转，使 X_{i-1} 轴与 X_i 轴对齐。(代表当前电机的实际转动)</p>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <button id="btn-reset" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded transition">
+                复位参数
+            </button>
+            <p class="text-xs text-center text-gray-500 mt-3">提示：按住鼠标左键旋转视角，右键平移，滚轮缩放。</p>
+        </div>
+    </div>
+
+    <!-- Explanatory Tooltip overlay -->
+    <div id="status-panel" class="absolute left-6 bottom-6 panel p-4 rounded-lg max-w-md pointer-events-none">
+        <h3 class="text-lg font-bold text-white mb-2">空间变换矩阵 <span class="text-sm font-normal text-gray-400">(Frame i-1 → Frame i)</span></h3>
+        <p class="text-sm text-gray-300 font-mono">
+            T = Trans(X, a) × Rot(X, α) × Trans(Z, d) × Rot(Z, θ)
+        </p>
+    </div>
+
+    <script>
+        // --- 1. Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#1e293b'); // Tailwind slate-800
+
+        // Grid & Lights
+        const gridHelper = new THREE.GridHelper(20, 20, 0x475569, 0x334155);
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(8, 8, 12);
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(2.5, 0, 0);
+
+        // --- 2. 3D Objects Construction ---
+        
+        // Helper function to create an coordinate frame
+        function createFrame(size = 2, opacity = 1.0) {
+            const group = new THREE.Group();
+            
+            // X axis (Red)
+            const arrowX = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), size, 0xef4444, 0.4, 0.2);
+            // Y axis (Green)
+            const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), size, 0x22c55e, 0.4, 0.2);
+            // Z axis (Blue) - Motor Axis
+            const arrowZ = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), size, 0x3b82f6, 0.4, 0.2);
+            
+            // Set opacity if needed
+            [arrowX, arrowY, arrowZ].forEach(arrow => {
+                arrow.line.material.transparent = true;
+                arrow.line.material.opacity = opacity;
+                arrow.cone.material.transparent = true;
+                arrow.cone.material.opacity = opacity;
+            });
+
+            group.add(arrowX, arrowY, arrowZ);
+            return group;
+        }
+
+        // Helper function to create a "Motor" cylinder
+        function createMotor() {
+            // Motor aligned with Z axis
+            const geometry = new THREE.CylinderGeometry(0.8, 0.8, 1.5, 32);
+            // Rotate geometry so cylinder runs along Z instead of Y
+            geometry.rotateX(Math.PI / 2); 
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x94a3b8, // slate-400
+                metalness: 0.6,
+                roughness: 0.4
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            // Add a visual indicator (a stripe) to see rotation clearly
+            const stripeGeo = new THREE.BoxGeometry(0.1, 1.51, 1.6);
+            const stripeMat = new THREE.MeshBasicMaterial({ color: 0xeab308 }); // yellow-500
+            const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+            mesh.add(stripe);
+
+            return mesh;
+        }
+
+        // Setup Scene Objects
+        const frame0 = createFrame(3); // Base frame (i-1)
+        scene.add(frame0);
+        
+        const motor0 = createMotor(); // Motor at i-1
+        frame0.add(motor0);
+
+        const frame1 = createFrame(3); // End frame (i)
+        scene.add(frame1);
+
+        const motor1 = createMotor(); // Motor at i
+        frame1.add(motor1);
+
+        // Visual Links (Lines connecting the frames)
+        const linkMaterialA = new THREE.LineDashedMaterial({ color: 0xef4444, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const linkGeometryA = new THREE.BufferGeometry();
+        const lineA = new THREE.Line(linkGeometryA, linkMaterialA);
+        scene.add(lineA);
+
+        const linkMaterialD = new THREE.LineDashedMaterial({ color: 0x3b82f6, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const linkGeometryD = new THREE.BufferGeometry();
+        const lineD = new THREE.Line(linkGeometryD, linkMaterialD);
+        scene.add(lineD);
+
+        // --- 3. MDH Kinematics Logic ---
+        
+        const params = {
+            a: 5.0,
+            alpha: 0, // in degrees
+            d: 2.0,
+            theta: 45 // in degrees
+        };
+
+        function updateRobot() {
+            // Get values from sliders
+            params.a = parseFloat(document.getElementById('slider-a').value);
+            params.alpha = parseFloat(document.getElementById('slider-alpha').value);
+            params.d = parseFloat(document.getElementById('slider-d').value);
+            params.theta = parseFloat(document.getElementById('slider-theta').value);
+
+            // Update UI text
+            document.getElementById('val-a').innerText = params.a.toFixed(1);
+            document.getElementById('val-alpha').innerText = params.alpha + '°';
+            document.getElementById('val-d').innerText = params.d.toFixed(1);
+            document.getElementById('val-theta').innerText = params.theta + '°';
+
+            const alphaRad = THREE.MathUtils.degToRad(params.alpha);
+            const thetaRad = THREE.MathUtils.degToRad(params.theta);
+
+            // Modified DH Transform Sequence:
+            // Frame i-1 -> Transform(a) -> Transform(alpha) -> Transform(d) -> Transform(theta) -> Frame i
+            
+            const matrix = new THREE.Matrix4();
+            
+            // Point 0: Origin (Frame i-1)
+            const p0 = new THREE.Vector3(0, 0, 0);
+
+            // 1. Translate along X_{i-1} by a_{i-1}
+            matrix.multiply(new THREE.Matrix4().makeTranslation(params.a, 0, 0));
+            const p1 = new THREE.Vector3().setFromMatrixPosition(matrix);
+
+            // 2. Rotate around X_{i-1} by alpha_{i-1}
+            matrix.multiply(new THREE.Matrix4().makeRotationX(alphaRad));
+            const p2 = new THREE.Vector3().setFromMatrixPosition(matrix); // Position is same as p1, but orientation changes
+
+            // 3. Translate along new Z (Z_i) by d_i
+            matrix.multiply(new THREE.Matrix4().makeTranslation(0, 0, params.d));
+            const p3 = new THREE.Vector3().setFromMatrixPosition(matrix);
+
+            // 4. Rotate around new Z (Z_i) by theta_i
+            matrix.multiply(new THREE.Matrix4().makeRotationZ(thetaRad));
+            
+            // Apply final matrix to Frame i
+            frame1.position.setFromMatrixPosition(matrix);
+            frame1.quaternion.setFromRotationMatrix(matrix);
+
+            // Update Visual Lines
+            // Line A: from Origin to a (along X_{i-1})
+            linkGeometryA.setFromPoints([p0, p1]);
+            lineA.computeLineDistances(); // Required for dashed lines
+
+            // Line D: from a to final position (along Z_i)
+            linkGeometryD.setFromPoints([p1, p3]);
+            lineD.computeLineDistances();
+        }
+
+        // --- 4. Event Listeners ---
+        const sliders = ['a', 'alpha', 'd', 'theta'];
+        sliders.forEach(id => {
+            document.getElementById('slider-' + id).addEventListener('input', updateRobot);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            document.getElementById('slider-a').value = 5;
+            document.getElementById('slider-alpha').value = 0;
+            document.getElementById('slider-d').value = 2;
+            document.getElementById('slider-theta').value = 45;
+            updateRobot();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 5. Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initial setup
+        updateRobot();
+        animate();
+    </script>
+</body>
+</html>
