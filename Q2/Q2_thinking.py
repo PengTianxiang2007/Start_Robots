@@ -5,7 +5,7 @@ from Q2_Joint import Joint_torch
 
 """定义前向传播函数"""
 def frontward(joint_angle):
-
+    joint_angle = torch.tensor(float(joint_angle))
     joint_angle.requires_grad_(True)
 
     shoulder_pan = Joint_torch(0, 0, 0.0624, joint_angle[0])
