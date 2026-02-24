@@ -3,7 +3,7 @@ import roboticstoolbox as rtb
 from Q2_Joint import Joint 
 
 """定义计算函数"""
-def caculate_matrixes(inputs):
+def caculate_matrixes(inputs, print_require = True):
     joint_angle = list(map(float, inputs.split()))
     joint_angle[1] -= 90                              #预处理输入数据
 
@@ -22,10 +22,11 @@ def caculate_matrixes(inputs):
 
     """计算并输出总变换矩阵"""
     final_matrix = shoulder_pan_trans@shoulder_lift_trans@elbow_flex_trans@wrist_flex_trans@wrist_roll_trans
-    print(final_matrix)
+    if print_require == True:
+        print(f"The final result is \n{np.round(final_matrix, 4)}")
     return final_matrix
 
-inputs = input("Please input the angle")
+#inputs = input("Please input the angle")
 
-output_matirx = caculate_matrixes(inputs)
+#output_matirx = caculate_matrixes(inputs)
     
