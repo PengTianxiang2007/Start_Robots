@@ -25,6 +25,6 @@ Joints = [shoulder_pan.assemble_joint(), shoulder_lift.assemble_joint(), elbow_f
             wrist_flex.assemble_joint(), wrist_roll.assemble_joint()]
 robot = rtb.DHRobot(Joints)
 
-solution = robot.ikine_LM(target_position, q0=joint_angle, mask=[1,1,1,1,1,0]) #仅五个关节，忽略最后一个方向的约束
+solution = robot.ikine_LM(target_position, q0=joint_angle)
 print(f"求解结果:{solution.q}")
 print(f"偏差:{solution.residual}") #评估偏差
