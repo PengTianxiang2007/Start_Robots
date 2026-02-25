@@ -26,5 +26,7 @@ Joints = [shoulder_pan.assemble_joint(), shoulder_lift.assemble_joint(), elbow_f
 robot = rtb.DHRobot(Joints)
 
 solution = robot.ikine_LM(target_position, q0=joint_angle)
-print(f"求解结果:{solution.q}")
-print(f"偏差:{solution.residual}") #评估偏差
+angle_solution = np.degrees(solution.q)
+angle_solution[1] += 90
+angle_solution = np.round(angle_solution, 4)
+print(angle_solution)
