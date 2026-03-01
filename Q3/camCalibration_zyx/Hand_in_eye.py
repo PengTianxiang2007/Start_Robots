@@ -56,7 +56,7 @@ def get_single_cb_matrixes(image, camera_matrix, distCoeffs, criteria,board_size
     else:
         print("ERROR in cv2.findChessboardCorners")
         return
-    objp = get_objectPoints
+    objp = get_objectPoints()
     flag_PnP, rotation_matirx, translation_matrix = cv2.solvePnP(objp, corners_fixed, camera_matrix, distCoeffs)
     rotation_matirx, _ = cv2.Rodrigues(rotation_matirx)
     return rotation_matirx, translation_matrix   
