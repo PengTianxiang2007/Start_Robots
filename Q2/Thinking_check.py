@@ -55,20 +55,21 @@ def gradient_decent( target_position,epoches ,lr, loss,joint_angle=[0,0,0,0,0]):
 
 if __name__ == "__main__":
     """进行正运动学计算"""
-    inputs = input("Please input the angle  ")
+    inputs = input("Please input the angle (真实目标角度，如: 90 0 90 0 0): ")
     target_matrix = caculate_matrixes(inputs, False)
     target_position_np = matrix_to_pose6d_np(target_matrix)
     
     # 将 NumPy 生成的位姿转为 Torch Tensor，供逆解作为目标使用
     target_position = torch.tensor(target_position_np, dtype=torch.float32)
-    #print(f"\n[由正运动学计算生成的目标位姿 6D Pose]:\n{target_position}\n")
+    print(f"\n[由正运动学计算生成的目标位姿 6D Pose]:\n{target_position}\n")
 
     """进行逆运动学计算"""
-    inputs_ik = input("Please input the angles  ")
+    inputs_ik = input("Please input the angles (逆运动学初始猜测角度，如: 0 0 0 0 0): ")
     joint_angle = torch.tensor(list(map(float, inputs_ik.split())), requires_grad=True, dtype=torch.float32)
 
     loss = torch.nn.MSELoss()
-
+    
+    # 传入正解生成的 target_position 进行验证
     output = gradient_decent(target_position, epoches=84000, lr=0.01, loss=loss, joint_angle = joint_angle)
     
     print(f"\n目标为:{inputs} \n 求解结果为{output}")

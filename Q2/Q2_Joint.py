@@ -68,13 +68,28 @@ def matrix_to_pose6d(matrix):
     return torch.stack([x, y, z, roll, pitch, yaw])
 
 def matrix_to_pose6d_np(matrix):
+    # 提取平移部分
     x, y, z = matrix[0, 3], matrix[1, 3], matrix[2, 3]
+    # 提取旋转矩阵的元素
     r11, r21, r31 = matrix[0, 0], matrix[1, 0], matrix[2, 0]
     r32, r33 = matrix[2, 1], matrix[2, 2]
-    pitch = np.arctan2(-r31, np.sqrt(r11**2 + r21**2))
-    yaw = np.arctan2(r21, r11)
-    roll = np.arctan2(r32, r33)
-    return np.array([x, y, z, roll, pitch, yaw])
+    # 计算 pitch 的余弦项，用于判断奇异点
+    cy = np.sqrt(r11**2 + r21**2)
+    singular = cy < 1e-6
+    if not singular:
+        # 正常情况
+        pitch = np.arctan2(-r31, cy)
+        yaw = np.arctan2(r21, r11)
+        roll = np.arctan2(r32, r33)
+    else:
+        # 发生万向节死锁 (pitch 接近 ±90度)
+        # 此时只能求出 roll 和 yaw 的组合，通常约定 roll = 0，将旋转全部归于 yaw
+        pitch = np.arctan2(-r31, cy)
+        yaw = np.arctan2(-matrix[0, 1], matrix[1, 1])
+        roll = 0.0
+    # 构建 6x1 二维列向量
+    pose = np.array([x, y, z, roll, pitch, yaw]).reshape(6, 1)
+    return pose
 
 def caculate_matrixes(inputs, print_require=False):
     angles = list(map(float, inputs.split()))
