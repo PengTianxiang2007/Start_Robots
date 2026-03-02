@@ -1,0 +1,2 @@
+from Hand_in_eye import get_extrinsics_hand_matrix
+print(get_extrinsics_hand_matrix())

@@ -8,7 +8,7 @@
         3.3位姿求解                        cv2.solvePnP
         3.4切割得到两个矩阵,添加在两个列表   cv2.Rodrigues
     4.编写读取图片并得到矩阵列表函数
-    5.
+    5.封装以上过程为一个函数,并在目标文件中被调用
 """
 
 """图像处理:
@@ -66,8 +66,8 @@ def get_objectPoints(cols=11, rows=8, square_size=0.02):
 """对单个相片进行识别,并返回camera->board的3*3和3*1矩阵"""
 def get_single_cb_matrixes(image, camera_matrix, distCoeffs, criteria,zeroZone=(-1, -1), winSize=(11, 11), cols=11, rows=8):
     objp, board_size = get_objectPoints(cols, rows, square_size=0.02)
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    flag, corners = cv2.findChessboardCorners(gray_image, board_size, None)
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #灰度图
+    flag, corners = cv2.findChessboardCorners(gray_image, board_size, None) 
     if flag:
         corners_fixed = cv2.cornerSubPix(gray_image, corners, winSize, zeroZone, criteria)
     else:
@@ -110,7 +110,7 @@ def get_extrinsics_hand_matrix():
     """得到 base->gripper 矩阵"""
     current_dir = Path(__file__).parent
     file_path = current_dir / "data_20251224_handineye" / "captures.json"
-    get_bg_matrixes(file_path, rot_bt, trs_bt)
+    get_bg_matrixes(file_path, rot_bt, trs_bt,inverse_matrix=True)
 
     """得到 camera 参数矩阵"""
     camera_data_path = current_dir / "data_20251224_handineye" / "target2cam_result.json"
@@ -136,7 +136,7 @@ def get_extrinsics_head_matrix():
     """得到 base->gripper 矩阵"""
     current_dir = Path(__file__).parent
     file_path = current_dir / "data_20251229_handtoeye" / "captures.json"
-    get_bg_matrixes(file_path, rot_bt, trs_bt, inverse_matrix=True)
+    get_bg_matrixes(file_path, rot_bt, trs_bt, inverse_matrix=False)
 
     """得到 camera 参数矩阵"""
     camera_data_path = current_dir / "data_20251229_handtoeye" / "target2cam_result.json"
