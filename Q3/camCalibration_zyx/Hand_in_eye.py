@@ -85,6 +85,21 @@ def get_cb_matrixes(paths, rot_matrixes_list, trs_matrixes_list, camera_matrix, 
         rot_matrixes_list.append(img_rotation)
         trs_matrixes_list.append(img_translation)
 
+"""处理角点数据获取失败"""
+def clean_missing_data(rotation_bt, translation_bt, rotation_cb, translation_cb):
+    clean_rot_cb, clean_trs_cb = [], []
+    clean_rot_bt, clean_trs_bt = [], []
+    
+    for i in range(len(rotation_cb)):
+        if rotation_cb[i] is not None and translation_cb[i] is not None:
+            clean_rot_cb.append(rotation_cb[i])
+            clean_trs_cb.append(translation_cb[i])
+            clean_rot_bt.append(rotation_bt[i])
+            clean_trs_bt.append(translation_bt[i])
+        else:
+            print(f"{i}组角点数据获取失败")
+            
+    return clean_rot_bt, clean_trs_bt, clean_rot_cb, clean_trs_cb
 
 def get_extrinsics_hand_matrix():
     rot_bt = [] #3*3旋转矩阵  base->gripper
@@ -105,6 +120,7 @@ def get_extrinsics_hand_matrix():
     images_path = current_dir / "data_20251224_handineye" / "images"
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     get_cb_matrixes(images_path, rot_cb, trs_cb, camera_matrix, distCoeffs, criteria)
+    rot_bt, trs_bt, rot_cb, trs_cb = clean_missing_data(rot_bt, trs_bt, rot_cb, trs_cb)
 
     """得到最终返回矩阵"""
     final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb)
@@ -130,6 +146,7 @@ def get_extrinsics_head_matrix():
     images_path = current_dir / "data_20251229_handtoeye" / "images"
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     get_cb_matrixes(images_path, rot_cb, trs_cb, camera_matrix, distCoeffs, criteria)
+    rot_bt, trs_bt, rot_cb, trs_cb = clean_missing_data(rot_bt, trs_bt, rot_cb, trs_cb)
 
     """得到最终返回矩阵"""
     final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb)
