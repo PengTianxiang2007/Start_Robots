@@ -92,7 +92,7 @@ def get_extrinsics_head_matrix():
 
     """获得 base->gripper 相关矩阵"""
     current_path = Path(__file__).parent
-    captures_path = current_path / "data_20251229_handtoeye" / "captures.json"
+    captures_path = current_path / "data_20251229_handtoeye" / "captures1.json"
     get_bg_matrixes(captures_path, rot_bt, trs_bt, inverse_matrix=True)
 
     """得到 camera 参数矩阵"""

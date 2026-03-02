@@ -48,7 +48,7 @@ from transform_utils import create_extrinsic_matrix
 sys.path.append('/vepfs-share/zouyixian/code/Robotwin_v2/policy/DP3/scripts/visualizer')
 # from visualizer.pointcloud import Visualizer, visualize_pointcloud
 import visualizer
-from get_matrixes import get_extrinsics_head_matrix,get_extrinsics_hand_matrix
+from test_script1 import get_extrinsics_head_matrix,get_extrinsics_hand_matrix
 
 class RGBDToPointCloudDeploy:
     """RGBD 转点云的部署类。
@@ -577,7 +577,7 @@ if __name__ == "__main__":
     """
     根源:extrinsics_hand矩阵作为变换矩阵,需要被覆盖
     """
-    extrinsics_hand = get_extrinsics_head_matrix() #就是这里！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+    extrinsics_hand = get_extrinsics_hand_matrix() #就是这里！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 
     rgbd2pcd_hand  = RGBDToPointCloudDeploy(
         num_points=args.num_points,
@@ -609,7 +609,7 @@ if __name__ == "__main__":
         #work_space = [[0, 0.55], [-0.4, 0.6],  [-0.5, 0.6]],
         # work_space = [[0, 0.67], [-0.60, 0.55],  [-0.3, 0.6]], # H42
         #work_space = [[0, 0.00001], [0,0.000001], [0, 0.000001]],
-        work_space = [[-0.4, 0.8], [-0.7, 1.5], [-1.2, 1]],
+        #work_space = [[-0.4, 0.8], [-0.7, 1.5], [-1.2, 1]],
         extrinsics = extrinsics_head,
     )
 
