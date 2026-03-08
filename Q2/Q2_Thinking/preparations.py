@@ -1,5 +1,4 @@
 import numpy as np
-import roboticstoolbox as rtb
 import torch
 from torch import nn
 
@@ -22,9 +21,6 @@ class Joint:
             print(matrix)
         return matrix
     
-    def assemble_joint(self):
-        return rtb.RevoluteMDH(alpha=self.Link_twist, a=self.Link_length, d=self.Link_offset)
-    
 class Joint_torch:
     def __init__(self, Link_twist, Link_length, Link_offset, Joint_angle=0,print_require = False):
         self.Link_twist = torch.deg2rad(torch.tensor(float(Link_twist)))
@@ -45,9 +41,7 @@ class Joint_torch:
         if self.print_require ==True:
             print(matrix)
         return matrix
-    
-    def assemble_joint(self):
-        return rtb.RevoluteMDH(alpha=self.Link_twist, a=self.Link_length, d=self.Link_offset)
+
 def matrix_to_pose6d(matrix):
     # 1. 提取平移向量 (x, y, z)
     x = matrix[0, 3]

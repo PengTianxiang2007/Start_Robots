@@ -1,6 +1,5 @@
 import numpy as np
 from preparations import Joint
-import roboticstoolbox as rtb
 from preparations import matrix_to_pose6d_np
 import pandas as pd
 import random
@@ -32,7 +31,7 @@ def caculate_matrixes(inputs, print_require = False): #inputs:输入的东西
     return final_matrix
 
 """生成随机数据"""
-def generate_fk_dataset_matrix(num_samples=100000, filename="fk_dataset_matrix.csv"):
+def generate_fk_dataset_matrix(num_samples=1000000, filename="fk_dataset_matrix.csv"):
     """
     随机生成关节角度并计算末端 4x4 位姿矩阵,提取前12个有效元素保存为CSV
     """
@@ -94,4 +93,4 @@ def generate_fk_dataset_matrix(num_samples=100000, filename="fk_dataset_matrix.c
 # 在文件末尾执行生成逻辑
 if __name__ == "__main__":
     # 生成 100000 组数据
-    generate_fk_dataset_matrix(num_samples=100000)
+    generate_fk_dataset_matrix(num_samples=1000000)
