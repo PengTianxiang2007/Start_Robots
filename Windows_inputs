@@ -1,0 +1,26 @@
+打开相机页面，尝试控制连接机械臂
+lerobot-teleoperate `
+    --robot.type=so101_follower `
+    --robot.port=COM5 `
+    --robot.id=my_awesome_follower_arm `
+    --robot.cameras="{'front': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --teleop.type=so101_leader `
+    --teleop.port=COM6 `
+    --teleop.id=my_awesome_leader_arm `
+    --display_data=true
+
+录制命令
+lerobot-record `
+    --robot.type=so101_follower `
+    --robot.port=COM5 `
+    --robot.id=follower_arm `
+    --robot.cameras="{'front': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --teleop.type=so101_leader `
+    --teleop.port=COM6 `
+    --teleop.id=leader_arm `
+    --display_data=true `
+    --dataset.repo_id=$HF_USER/20260313ThirdTry `   ------>需更改文件夹名称
+    --dataset.single_task="trial" `
+    --dataset.num_episodes=60 `
+    --dataset.episode_time_s=30 `
+    --dataset.reset_time_s=20

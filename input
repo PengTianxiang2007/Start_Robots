@@ -29,3 +29,18 @@ lerobot-calibrate \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM1 \
     --teleop.id=my_awesome_leader_arm \
+
+#lerobot-record `
+    --robot.type=so101_follower `
+    --robot.port=COM5 `
+    --robot.id=follower_arm `
+    --robot.cameras="{'front': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --teleop.type=so101_leader `
+    --teleop.port=COM6 `
+    --teleop.id=leader_arm `
+    --display_data=true `
+    --dataset.repo_id=$HF_USER/20260313ThirdTry `
+    --dataset.single_task="trial" `
+    --dataset.num_episodes=60 `
+    --dataset.episode_time_s=30 `
+    --dataset.reset_time_s=20
