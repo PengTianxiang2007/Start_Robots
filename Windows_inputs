@@ -24,3 +24,9 @@ lerobot-record `
     --dataset.num_episodes=60 `
     --dataset.episode_time_s=30 `
     --dataset.reset_time_s=20
+
+切分数据集示例：
+lerobot-edit-dataset --repo_id PengTianxiang/20260313ThirdTry --operation.type split --operation.splits '{"task1": [0, 1], "task2": [2, 51]}'
+
+读取数据集数据：
+lerobot-edit-dataset --repo_id PengTianxiang/20260313ThirdTry_task1 --operation.type info

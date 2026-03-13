@@ -30,6 +30,8 @@ lerobot-calibrate \
     --teleop.port=/dev/ttyACM1 \
     --teleop.id=my_awesome_leader_arm \
 
+
+
 #lerobot-record `
     --robot.type=so101_follower `
     --robot.port=COM5 `
