@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 RGBD 转彩色点云的小工具（部署侧使用）
 
