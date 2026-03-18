@@ -3,7 +3,7 @@ lerobot-teleoperate `
     --robot.type=so101_follower `
     --robot.port=COM5 `
     --robot.id=my_awesome_follower_arm `
-    --robot.cameras="{'front': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30}}" `
     --teleop.type=so101_leader `
     --teleop.port=COM6 `
     --teleop.id=my_awesome_leader_arm `
@@ -14,14 +14,16 @@ lerobot-record `
     --robot.type=so101_follower `
     --robot.port=COM5 `
     --robot.id=follower_arm `
-    --robot.cameras="{'front': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --teleop.type=so101_leader `
+    --teleop.port=COM6 `
     --teleop.type=so101_leader `
     --teleop.port=COM6 `
     --teleop.id=leader_arm `
     --display_data=true `
-    --dataset.repo_id=$HF_USER/20260313ThirdTry `   ------>需更改文件夹名称
+    --dataset.repo_id=PengTianxiang/20260318ForthTry `
     --dataset.single_task="trial" `
-    --dataset.num_episodes=60 `
+    --dataset.num_episodes=30 `
     --dataset.episode_time_s=30 `
     --dataset.reset_time_s=20
 
@@ -30,3 +32,9 @@ lerobot-edit-dataset --repo_id PengTianxiang/20260313ThirdTry --operation.type s
 
 读取数据集数据：
 lerobot-edit-dataset --repo_id PengTianxiang/20260313ThirdTry_task1 --operation.type info
+
+合并数据集 示例
+lerobot-edit-dataset `
+    --repo_id PengTianxiang/20260313ThirdTry_merged_try1 `
+    --operation.type merge `
+    --operation.repo_ids '["PengTianxiang/20260313ThirdTry_task1","PengTianxiang/20260313ThirdTry_task2"]'
