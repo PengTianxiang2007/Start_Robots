@@ -1,0 +1,3 @@
+from get_matrixes2 import get_extrinsics_head_matrix, get_extrinsics_hand_matrix
+print(get_extrinsics_hand_matrix())
+print(get_extrinsics_head_matrix())

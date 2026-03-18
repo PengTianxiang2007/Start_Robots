@@ -79,7 +79,8 @@ def get_extrinsics_hand_matrix():
     get_cb_matrixes(camera_data_path, rot_cb, trs_cb)
 
     """计算,返回目标矩阵"""
-    final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb)
+    print(f"Robot poses: {len(rot_bt)}, Camera detections: {len(rot_cb)}")
+    final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb,method=cv2.CALIB_HAND_EYE_DANIILIDIS)
     output = splice_matrix(final_rotation_matrix, final_translation_matrix)
     return output
 
@@ -103,6 +104,7 @@ def get_extrinsics_head_matrix():
     get_cb_matrixes(camera_data_path, rot_cb, trs_cb)
 
     """计算,返回目标矩阵"""
-    final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb)
+    print(f"Robot poses: {len(rot_bt)}, Camera detections: {len(rot_cb)}")
+    final_rotation_matrix, final_translation_matrix = cv2.calibrateHandEye(rot_bt, trs_bt, rot_cb, trs_cb,method=cv2.CALIB_HAND_EYE_DANIILIDIS)
     output = splice_matrix(final_rotation_matrix, final_translation_matrix)
     return output
