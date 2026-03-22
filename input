@@ -46,3 +46,16 @@ lerobot-calibrate \
     --dataset.num_episodes=60 `
     --dataset.episode_time_s=30 `
     --dataset.reset_time_s=20
+
+训练命令行输入:  注意先使用screen创建一个桌面
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --policy.type=diffusion \
+  --output_dir=outputs/20260320/diffusion_third_try \
+  --job_name=20260320_diffusion_first_try \
+  --policy.device=cuda \
+  --wandb.enable=true \
+  --wandb.project=20260320_PengTianxiang_third_diffusion \
+  --policy.push_to_hub=false \
+  --steps=100000 \
+  --batch_size=64 

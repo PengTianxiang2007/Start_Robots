@@ -21,9 +21,9 @@ lerobot-record `
     --teleop.port=COM6 `
     --teleop.id=leader_arm `
     --display_data=true `
-    --dataset.repo_id=PengTianxiang/20260318ForthTry `
-    --dataset.single_task="trial" `
-    --dataset.num_episodes=30 `
+    --dataset.repo_id=PengTianxiang/20260319Second `
+    --dataset.single_task="move small thing to a target position" `
+    --dataset.num_episodes=80 `
     --dataset.episode_time_s=30 `
     --dataset.reset_time_s=20
 
@@ -38,3 +38,51 @@ lerobot-edit-dataset `
     --repo_id PengTianxiang/20260313ThirdTry_merged_try1 `
     --operation.type merge `
     --operation.repo_ids '["PengTianxiang/20260313ThirdTry_task1","PengTianxiang/20260313ThirdTry_task2"]'
+
+删除episode
+lerobot-edit-dataset `
+    --repo_id PengTianxiang/20260318FirstTry `
+    --operation.type delete_episodes `
+    --operation.episode_indices "[0, 1]"
+
+数据集下载
+hf download PengTianxiang/20260319Second --repo-type dataset
+
+本地数据集训练：
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --dataset.root=/root/.cache/huggingface/lerobot/PengTianxiang/20260319Second \
+  --dataset.streaming=false \
+  --policy.type=diffusion \
+  --output_dir=/root/autodl-tmp/outputs/diffusion_run3 \
+  --job_name=10160320my_third_train \
+  --policy.device=cuda \
+  --wandb.enable=true \
+  --policy.push_to_hub=false \
+  --steps=100000 \
+  --batch_size=64
+
+非本地数据集训练：
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --policy.type=diffusion \
+  --output_dir=/root/autodl-tmp/outputs/diffusion_run7 \
+  --job_name=10160320my_seventh_train \
+  --policy.device=cuda \
+  --wandb.enable=true \
+  --policy.push_to_hub=false \
+  --steps=100000 \
+  --batch_size=32
+
+训练：不适用Auto DL学术资源加速
+# 1. 清除所有代理环境变量（关闭学术加速的影响）
+unset http_proxy
+unset https_proxy
+unset HTTP_PROXY
+unset HTTPS_PROXY
+# 2. 强制使用国内镜像站
+export HF_ENDPOINT=https://hf-mirror.com
+
+上传模型：
+hf upload PengTianxiang/20260321diffusion_run7_last_second \
+  /root/autodl-tmp/outputs/diffusion_run7/checkpoints/last/pretrained_model 
