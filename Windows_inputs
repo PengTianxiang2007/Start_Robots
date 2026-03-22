@@ -63,6 +63,8 @@ lerobot-train \
   --batch_size=64
 
 非本地数据集训练：
+output_dir:尽量使用绝对路径
+会自动从云端拉取数据集，然后进行训练，所以需要事先登录，以创建相关拉取到的问价你骄傲
 lerobot-train \
   --dataset.repo_id=PengTianxiang/20260319Second \
   --policy.type=diffusion \
