@@ -1,0 +1,31 @@
+1.安装anaconda
+
+$env:HTTP_PROXY="http://127.0.0.1:1080"
+$env:HTTPS_PROXY="http://127.0.0.1:1080"
+
+winget install Anaconda.Miniconda3
+
+2.创建lerobot环境
+git config --global http.proxy http://127.0.0.1:1080
+git config --global https.proxy http://127.0.0.1:1080
+
+conda create -y -n lerobot python=3.12
+conda activate lerobot
+conda install ffmpeg -c conda-forge
+ffmpeg -version  
+
+3.拉取lerobot代码仓库
+git clone https://github.com/huggingface/lerobot.git
+cd lerobot
+
+4.安装依赖
+
+pip install -e .
+pip install -e ".[aloha]" 
+pip install -e ".[feetech]"
+
+5.登录账号以及token
+hf auth login --token ${HUGGINGFACE_TOKEN} --add-to-git-credential
+
+git config --global --unset http.proxy
+git config --global --unset https.proxy
