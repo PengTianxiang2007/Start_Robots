@@ -1,7 +1,7 @@
 import serial
 import time
 
-SERIAL_PORT = '/dev/ttyACM0'
+SERIAL_PORT = 'COM5'
 BAUDRATE = 1000000
 SERVO_ID = 6
 
