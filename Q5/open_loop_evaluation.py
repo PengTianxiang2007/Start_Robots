@@ -1,3 +1,11 @@
+"""
+python open_loop_evaluation.py \
+  --repo-id PengTianxiang/20260319First \
+  --policy-path PengTianxiang/20260321diffusion_run7_060000\
+  --episode 21 \
+  --output-png outputs/ep21_open_loop.png
+"""
+
 import argparse
 from pathlib import Path
 
