@@ -1,0 +1,55 @@
+Pi-0 训练代码
+pip install -e ".[pi]"
+
+export HF_ENDPOINT=https://hf-mirror.com
+
+lerobot-train \
+    --dataset.repo_id=PengTianxiang/20260319Second \
+    --policy.type=pi0 \
+    --output_dir=/root/autodl-tmp/outputs/pi0_try13 \
+    --job_name=pi0_20260408_1 \
+    --policy.pretrained_path=lerobot/pi0_base \
+    --policy.repo_id=PengTianxiang/20260408_pi0_try13 \
+    --policy.compile_model=true \
+    --policy.gradient_checkpointing=true \
+    --policy.dtype=bfloat16 \
+    --policy.freeze_vision_encoder=true \
+    --policy.train_expert_only=false \
+    --steps=3000 \
+    --policy.device=cuda \
+    --batch_size=1
+
+LoRA快速微调：
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --policy.type=pi0 \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try13_lora \
+  --job_name=pi0_20260408_1_lora \
+  --policy.pretrained_path=lerobot/pi0_base \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try13_lora \
+  --policy.compile_model=true \
+  --policy.gradient_checkpointing=true \
+  --policy.dtype=bfloat16 \
+  --policy.device=cuda \
+  --batch_size=1 \
+  --steps=3000 \
+  --peft.method_type=LORA \
+  --peft.r=16
+
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --policy.type=pi0 \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try13_lora \
+  --job_name=pi0_20260408_1_lora \
+  --policy.pretrained_path=lerobot/pi0_base \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try13_lora \
+  --policy.compile_model=true \
+  --policy.gradient_checkpointing=true \
+  --policy.dtype=bfloat16 \
+  --policy.freeze_vision_encoder=true \
+  --policy.train_expert_only=false \
+  --steps=3000 \
+  --policy.device=cuda \
+  --batch_size=1 \
+  --peft.method_type=LORA \
+  --peft.r=16
