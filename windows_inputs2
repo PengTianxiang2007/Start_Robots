@@ -39,10 +39,10 @@ lerobot-train \
 lerobot-train \
   --dataset.repo_id=PengTianxiang/20260319Second \
   --policy.type=pi0 \
-  --output_dir=/root/autodl-tmp/outputs/pi0_try13_lora \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try17_lora \
   --job_name=pi0_20260408_1_lora \
   --policy.pretrained_path=lerobot/pi0_base \
-  --policy.repo_id=PengTianxiang/20260408_pi0_try13_lora \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try17_lora \
   --policy.compile_model=true \
   --policy.gradient_checkpointing=true \
   --policy.dtype=bfloat16 \
@@ -50,6 +50,24 @@ lerobot-train \
   --policy.train_expert_only=false \
   --steps=3000 \
   --policy.device=cuda \
-  --batch_size=1 \
+  --batch_size=16 \
   --peft.method_type=LORA \
   --peft.r=16
+
+lerobot-train \
+  --dataset.repo_id=PengTianxiang/20260319Second \
+  --policy.type=pi0 \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try17_lora \
+  --job_name=pi0_20260408_1_lora \
+  --policy.pretrained_path=/root/autodl-tmp/pi0_base \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try17_lora \
+  --policy.compile_model=true \
+  --policy.gradient_checkpointing=true \
+  --policy.dtype=bfloat16 \
+  --policy.freeze_vision_encoder=true \
+  --policy.train_expert_only=false \
+  --steps=3000 \
+  --policy.device=cuda \
+  --batch_size=16 \
+  --peft.method_type=LORA \
+  --peft.r=16 

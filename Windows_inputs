@@ -86,8 +86,8 @@ unset HTTPS_PROXY
 export HF_ENDPOINT=https://hf-mirror.com
 
 上传模型：
-hf upload PengTianxiang/20260326act_run6_020000 \
-  /root/autodl-tmp/outputs/act_try6/checkpoints/020000/pretrained_model
+hf upload PengTianxiang/20260408PI0LORA \
+  /root/autodl-tmp/outputs/pi0_try17_lora/checkpoints/last/pretrained_model
 
 策略评估：
 lerobot-record \

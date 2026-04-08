@@ -3,8 +3,8 @@ PI0 离线开环评估脚本（LeRobot）
 
 用法示例：
 python pi0_evaluate.py \
-  --repo-id your_name/your_dataset \
-  --policy-path your_name/your_pi0_checkpoint \
+  --repo-id PengTianxiang/20260319First \
+  --policy-path PengTianxiang/20260408PI0LORA \
   --episode 0 \
   --output-png outputs/pi0_ep0_open_loop.png
 """
@@ -26,8 +26,16 @@ from lerobot.utils.constants import ACTION
 
 def preprocess_observation(observation: dict[str, torch.Tensor | np.ndarray]) -> dict[str, torch.Tensor]:
     """将单帧观测整理为模型可消费的 batched tensor。"""
-    processed: dict[str, torch.Tensor] = {}
+    processed: dict[str, torch.Tensor | str | list[str]] = {}
     for key, value in observation.items():
+        # PI0 的 task 文本会交给 TokenizerProcessorStep 处理，这里必须保留字符串，不可转成 tensor。
+        if isinstance(value, (str, np.str_)):
+            processed[key] = str(value)
+            continue
+        if isinstance(value, list) and all(isinstance(v, str) for v in value):
+            processed[key] = value
+            continue
+
         if isinstance(value, torch.Tensor):
             tensor = value
         else:
@@ -43,7 +51,7 @@ def preprocess_observation(observation: dict[str, torch.Tensor | np.ndarray]) ->
             tensor = tensor.float()
 
         processed[key] = tensor.contiguous().unsqueeze(0)
-    return processed
+    return processed  # type: ignore[return-value]
 
 
 def plot_joint_curves(
