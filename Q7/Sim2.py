@@ -7,7 +7,23 @@ from transforms3d.euler import euler2axangle
 from PIL import Image
 from transformers import AutoModelForVision2Seq, AutoProcessor
 
-os.environ["DISPLAY"] = ""
+def configure_headless_render_env():
+    os.environ["DISPLAY"] = ""
+    os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+    os.environ.setdefault("EGL_PLATFORM", "surfaceless")
+    os.environ.setdefault("MUJOCO_GL", "egl")
+    if "VK_ICD_FILENAMES" not in os.environ:
+        vk_icd_candidates = [
+            "/usr/share/vulkan/icd.d/nvidia_icd.json",
+            "/etc/vulkan/icd.d/nvidia_icd.json",
+        ]
+        for p in vk_icd_candidates:
+            if os.path.isfile(p):
+                os.environ["VK_ICD_FILENAMES"] = p
+                break
+
+
+configure_headless_render_env()
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
@@ -90,7 +106,20 @@ env_id = os.environ.get("SIMPLER_ENV_ID", "widowx_put_eggplant_in_basket")
 # 这里不能继续向 simpler_env.make() 传入 obs_mode / control_mode / render_mode，
 # 因为当前仓库里的 simpler_env.make(task_name) 真实签名只接受任务名，
 # 并在内部构建对应的预封装 SIMPLER benchmark 环境。
-env = simpler_env.make(env_id)
+try:
+    env = simpler_env.make(env_id)
+except Exception as exc:
+    msg = str(exc)
+    if "SapienRenderer" in msg or "rendering device" in msg or "GLFW" in msg or "X11" in msg:
+        print(
+            "[Headless 渲染诊断] simpler_env.make() 失败，疑似 Vulkan/EGL 渲染设备不可用。\n"
+            "已在脚本中设置 DISPLAY='', PYOPENGL_PLATFORM=egl, EGL_PLATFORM=surfaceless。\n"
+            "请在云服务器继续检查：\n"
+            "1) nvidia-smi 是否可见 GPU；\n"
+            "2) /usr/share/vulkan/icd.d/nvidia_icd.json 是否存在；\n"
+            "3) 容器是否挂载了 Vulkan/NVIDIA 图形驱动（不仅是 CUDA 计算驱动）。"
+        )
+    raise
 
 """
 开始循环
