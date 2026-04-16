@@ -113,22 +113,23 @@ if DEVICE.startswith("cuda"):
         model_dtype = torch.float16
 else:
     model_dtype = torch.float32
-try:
-    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
-except Exception as exc:
-    print(
-        "[WARN] use_fast=False 初始化失败，自动回退 use_fast=True。"
-        f" 具体报错: {type(exc).__name__}: {exc}"
-    )
-    print(
-        "[INFO] 若要继续使用 slow tokenizer，可安装: pip install sentencepiece"
-    )
-    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=True)
+force_slow_tokenizer = os.environ.get("OPENVLA_FORCE_SLOW_TOKENIZER", "1") == "1"
+if force_slow_tokenizer:
+    try:
+        import sentencepiece  # type: ignore  # noqa: F401
+    except Exception as exc:
+        raise RuntimeError(
+            "当前配置要求 slow tokenizer，但未检测到 sentencepiece。"
+            " 请先执行: pip install sentencepiece"
+        ) from exc
+processor = AutoProcessor.from_pretrained(
+    model_path,
+    trust_remote_code=True,
+    use_fast=not force_slow_tokenizer,
+)
 if hasattr(processor, "tokenizer"):
     if hasattr(processor.tokenizer, "legacy"):
         processor.tokenizer.legacy = True
-    if hasattr(processor.tokenizer, "padding_side"):
-        processor.tokenizer.padding_side = "left"
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
