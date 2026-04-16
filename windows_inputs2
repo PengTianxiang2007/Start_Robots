@@ -32,42 +32,87 @@ lerobot-train \
   --policy.dtype=bfloat16 \
   --policy.device=cuda \
   --batch_size=1 \
-  --steps=3000 \
+  --steps=30000 \
   --peft.method_type=LORA \
   --peft.r=16
 
 lerobot-train \
   --dataset.repo_id=PengTianxiang/20260319Second \
   --policy.type=pi0 \
-  --output_dir=/root/autodl-tmp/outputs/pi0_try17_lora \
-  --job_name=pi0_20260408_1_lora \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try27_lora \
+  --job_name=pi0_20260408_2_lora \
   --policy.pretrained_path=lerobot/pi0_base \
-  --policy.repo_id=PengTianxiang/20260408_pi0_try17_lora \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try27_lora \
   --policy.compile_model=true \
   --policy.gradient_checkpointing=true \
   --policy.dtype=bfloat16 \
-  --policy.freeze_vision_encoder=true \
+  --policy.freeze_vision_encoder=false \
   --policy.train_expert_only=false \
-  --steps=3000 \
+  --save_checkpoint=true \
+  --save_freq=5000 \
+  --steps=80000 \
   --policy.device=cuda \
   --batch_size=16 \
   --peft.method_type=LORA \
-  --peft.r=16
+  --peft.r=64
 
 lerobot-train \
   --dataset.repo_id=PengTianxiang/20260319Second \
   --policy.type=pi0 \
-  --output_dir=/root/autodl-tmp/outputs/pi0_try17_lora \
-  --job_name=pi0_20260408_1_lora \
+  --output_dir=/root/autodl-tmp/outputs/pi0_try25_lora \
+  --job_name=pi0_20260410_1_lora \
   --policy.pretrained_path=/root/autodl-tmp/pi0_base \
-  --policy.repo_id=PengTianxiang/20260408_pi0_try17_lora \
+  --policy.repo_id=PengTianxiang/20260408_pi0_try21_lora \
   --policy.compile_model=true \
   --policy.gradient_checkpointing=true \
   --policy.dtype=bfloat16 \
-  --policy.freeze_vision_encoder=true \
+  --policy.freeze_vision_encoder=false \
   --policy.train_expert_only=false \
-  --steps=3000 \
+  --steps=10000 \
   --policy.device=cuda \
-  --batch_size=16 \
+  --batch_size=32 \
   --peft.method_type=LORA \
-  --peft.r=16 
+  --peft.r=64 
+
+
+官方远程：
+本地：
+python src/lerobot/async_inference/robot_client.py `
+    --robot.type=so101_follower `
+    --robot.port=COM5 `
+    --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 0, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --robot.id=my_awesome_follower_arm `
+    --task="put the small gadget on the white paper" `
+    --server_address=127.0.0.1:8080 `
+    --policy_type=diffusion `
+    --pretrained_name_or_path=PengTianxiang/20260321diffusion_run7_080000 `
+    --policy_device=cuda `
+    --client_device=cpu `
+    --actions_per_chunk=50 `
+    --chunk_size_threshold=0.5 `
+    --aggregate_fn_name=weighted_average `
+    --debug_visualize_queue_size=True
+
+云端：
+python -m lerobot.async_inference.policy_server \
+     --host=127.0.0.1 \
+     --port=8080 \
+     --fps=30 \
+     --inference_latency=0.033 \
+     --obs_queue_timeout=1
+
+python src/lerobot/async_inference/robot_client.py `
+  --robot.type=so101_follower `
+  --robot.port=COM5 `
+  --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30},'workspace': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30}}" `
+  --robot.id=my_awesome_follower_arm `
+  --task="put the small gadget on the white paper" `
+  --server_address=127.0.0.1:8080 `
+  --policy_type=diffusion `
+  --pretrained_name_or_path=PengTianxiang/20260321diffusion_run7_080000 `
+  --policy_device=cuda `
+  --client_device=cpu `
+  --actions_per_chunk=50 `
+  --chunk_size_threshold=0.5 `
+  --aggregate_fn_name=weighted_average `
+  --debug_visualize_queue_size=True

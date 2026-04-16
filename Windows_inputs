@@ -3,7 +3,7 @@ lerobot-teleoperate `
     --robot.type=so101_follower `
     --robot.port=COM5 `
     --robot.id=my_awesome_follower_arm `
-    --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30}}" `
+    --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 0, 'width': 640, 'height': 480, 'fps': 30}}" `
     --teleop.type=so101_leader `
     --teleop.port=COM6 `
     --teleop.id=my_awesome_leader_arm `
@@ -86,8 +86,8 @@ unset HTTPS_PROXY
 export HF_ENDPOINT=https://hf-mirror.com
 
 上传模型：
-hf upload PengTianxiang/20260408PI0LORA \
-  /root/autodl-tmp/outputs/pi0_try17_lora/checkpoints/last/pretrained_model
+hf upload PengTianxiang/20260409PI0LORA \
+  /root/autodl-tmp/outputs/pi0_try27_lora/checkpoints/070000/pretrained_model
 
 策略评估：
 lerobot-record \
@@ -109,10 +109,10 @@ Remove-Item -Recurse -Force "C:\Users\93232\.cache\huggingface\lerobot\PengTianx
 lerobot-record `
   --robot.type=so101_follower `
   --robot.port=COM5 `
-  --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 1, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30}}" `
+  --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 30},'head': {'type': 'opencv', 'index_or_path': 0, 'width': 640, 'height': 480, 'fps': 30}}" `
   --robot.id=my_awesome_follower_arm `
   --display_data=false `
-  --dataset.repo_id=PengTianxiang/eval_20260407_diffusionrun7_try3 `
+  --dataset.repo_id=PengTianxiang/eval_20260409_diffusionrun7_try1 `
   --dataset.single_task="Move small thing on the white paper" `
   --dataset.streaming_encoding=true `
   --dataset.encoder_threads=2 `

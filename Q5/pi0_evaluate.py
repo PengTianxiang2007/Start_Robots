@@ -4,9 +4,9 @@ PI0 离线开环评估脚本（LeRobot）
 用法示例：
 python pi0_evaluate.py \
   --repo-id PengTianxiang/20260319First \
-  --policy-path PengTianxiang/20260408PI0LORA \
-  --episode 0 \
-  --output-png outputs/pi0_ep0_open_loop.png
+  --policy-path /root/autodl-tmp/outputs/pi0_try27_lora/checkpoints/070000/pretrained_model \
+  --episode 15 \
+  --output-png outputs/pi0_ep15_open_loop.png
 """
 
 import argparse

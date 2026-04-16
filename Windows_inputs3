@@ -1,0 +1,59 @@
+
+第一个终端
+# 1. 确保环境变量已设置
+$env:PYTHONPATH = "src"
+$env:http_proxy=""
+$env:https_proxy=""
+$env:all_proxy=""
+$env:no_proxy="localhost,127.0.0.1"
+
+# 2. 运行客户端
+python -m lerobot.async_inference.robot_client `
+  --robot.type=so101_follower `
+  --robot.port=COM5 `
+  --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 320, 'height': 240, 'fps': 10, 'warmup_s': 3},'head': {'type': 'opencv', 'index_or_path': 0, 'width': 320, 'height': 240, 'fps': 10, 'warmup_s':3}}" `
+  --robot.id=my_awesome_follower_arm `
+  --task="put the small gadget on the white paper" `
+  --server_address=127.0.0.1:8080 `
+  --policy_type=diffusion `
+  --pretrained_name_or_path=PengTianxiang/20260321diffusion_run7_080000 `
+  --policy_device=cuda `
+  --client_device=cpu `
+  --actions_per_chunk=8 `
+  --chunk_size_threshold=0.1 `
+  --aggregate_fn_name=weighted_average `
+  --debug_visualize_queue_size=True
+
+
+# 在云服务器终端运行（参数不变）
+
+# 1. 先激活环境 (假设环境名叫 lerobot)
+conda activate lerobot
+
+# 2. 运行服务端 (强制监听 8080)
+python -m lerobot.async_inference.policy_server \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --fps 10 \
+  --diffusion_num_inference_steps=8
+
+第三个终端
+ssh -N -L 8080:127.0.0.1:8080 -p 49547 root@connect.westd.seetacloud.com
+ssh -N -L 8080:127.0.0.1:8080 -p 26832 root@connect.westd.seetacloud.com
+
+
+python -m lerobot.async_inference.robot_client `
+  --robot.type=so101_follower `
+  --robot.port=COM5 `
+  --robot.cameras="{'hand': {'type': 'opencv', 'index_or_path': 2, 'width': 640, 'height': 480, 'fps': 10, 'warmup_s': 3},'head': {'type': 'opencv', 'index_or_path': 0, 'width': 640, 'height': 480, 'fps': 10, 'warmup_s':3}}" `
+  --robot.id=my_awesome_follower_arm `
+  --task="put the small gadget on the white paper" `
+  --server_address=127.0.0.1:8080 `
+  --policy_type=act `
+  --pretrained_name_or_path=PengTianxiang/20260326act_run6_last `
+  --policy_device=cuda `
+  --client_device=cpu `
+  --actions_per_chunk=20 `
+  --chunk_size_threshold=0.8 `
+  --aggregate_fn_name=weighted_average `
+  --debug_visualize_queue_size=True

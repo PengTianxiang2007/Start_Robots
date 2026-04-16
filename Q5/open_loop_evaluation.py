@@ -60,9 +60,9 @@
 ------------
 python open_loop_evaluation.py \
   --repo-id PengTianxiang/20260319First \
-  --policy-path PengTianxiang/20260321diffusion_run7_060000 \
+  --policy-path /root/autodl-tmp/outputs/pi0_try27_lora/checkpoints/080000/pretrained_model \
   --episode 21 \
-  --output-png outputs/ep21_open_loop.png
+  --output-png outputs/pi0_ep21_open_loop.png
 """
 
 import argparse
