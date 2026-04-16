@@ -63,7 +63,7 @@ processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
-        attn_implementation="flash_attention_2",
+        attn_implementation="sdpa",
         torch_dtype=torch.bfloat16 if DEVICE.startswith("cuda") else torch.float32,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
