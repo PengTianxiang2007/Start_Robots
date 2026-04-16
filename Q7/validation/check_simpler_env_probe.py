@@ -1,0 +1,133 @@
+import os
+import sys
+import traceback
+from pathlib import Path
+
+import numpy as np
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SIMPLER_ENV_DIR = PROJECT_ROOT / "SimplerEnv"
+MANISKILL2_REAL2SIM_DIR = SIMPLER_ENV_DIR / "ManiSkill2_real2sim"
+DEFAULT_ASSET_DIR = Path("/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data")
+DEFAULT_ENV_ID = "widowx_put_eggplant_in_basket"
+
+
+class Reporter:
+    def __init__(self) -> None:
+        self.failures = 0
+
+    def pass_(self, title: str, detail: str) -> None:
+        print(f"[PASS] {title}: {detail}")
+
+    def fail(self, title: str, detail: str) -> None:
+        self.failures += 1
+        print(f"[FAIL] {title}: {detail}")
+
+    def summary(self) -> int:
+        print("\n===== SimplerEnv Probe Summary =====")
+        print(f"failures={self.failures}")
+        return 1 if self.failures else 0
+
+
+def main() -> int:
+    reporter = Reporter()
+    os.environ["DISPLAY"] = ""
+    os.environ["MS2_REAL2SIM_ASSET_DIR"] = str(DEFAULT_ASSET_DIR)
+
+    if not DEFAULT_ASSET_DIR.exists():
+        reporter.fail(
+            "资产目录",
+            f"默认资产目录不存在: {DEFAULT_ASSET_DIR}. "
+            "这会导致 simpler_env.make() 或 env.reset() 在真实仿真阶段失败。",
+        )
+        return reporter.summary()
+
+    for extra_path in [str(SIMPLER_ENV_DIR), str(MANISKILL2_REAL2SIM_DIR)]:
+        if extra_path not in sys.path:
+            sys.path.insert(0, extra_path)
+
+    try:
+        import simpler_env  # type: ignore
+        from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict  # type: ignore
+    except Exception as exc:
+        reporter.fail(
+            "simpler_env 导入",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}",
+        )
+        return reporter.summary()
+
+    try:
+        env = simpler_env.make(DEFAULT_ENV_ID)
+        reporter.pass_("环境构建", f"simpler_env.make({DEFAULT_ENV_ID!r}) 成功")
+    except Exception as exc:
+        reporter.fail(
+            "环境构建",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}",
+        )
+        return reporter.summary()
+
+    try:
+        obs, info = env.reset()
+        reporter.pass_("环境 reset", f"reset 成功，info keys={list(info.keys()) if isinstance(info, dict) else type(info)}")
+    except Exception as exc:
+        reporter.fail(
+            "环境 reset",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}\n"
+            "如果这里报 EGL / Vulkan / GLX / render / sapien 相关错误，通常是无图形界面下的离屏渲染环境没有配置好。",
+        )
+        try:
+            env.close()
+        except Exception:
+            pass
+        return reporter.summary()
+
+    try:
+        instruction = env.get_language_instruction()
+        image = get_image_from_maniskill2_obs_dict(env, obs)
+        if not isinstance(instruction, str):
+            raise TypeError(f"instruction 应为 str，实际得到 {type(instruction)}")
+        if not isinstance(image, np.ndarray):
+            raise TypeError(f"观测图像应为 np.ndarray，实际得到 {type(image)}")
+        if image.ndim != 3 or image.shape[2] != 3:
+            raise ValueError(f"观测图像必须是 HxWx3，实际得到 shape={image.shape}")
+        if image.dtype != np.uint8:
+            raise TypeError(f"观测图像 dtype 应为 uint8，实际得到 {image.dtype}")
+        reporter.pass_("语言指令", instruction)
+        reporter.pass_("相机观测", f"shape={image.shape}, dtype={image.dtype}")
+    except Exception as exc:
+        reporter.fail(
+            "观测检查",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}",
+        )
+
+    try:
+        action = np.zeros(7, dtype=np.float32)
+        next_obs, reward, done, truncated, step_info = env.step(action)
+        _ = get_image_from_maniskill2_obs_dict(env, next_obs)
+        reporter.pass_(
+            "环境 step",
+            f"使用 7 维零动作成功 step 一次，reward={reward}, done={done}, truncated={truncated}, "
+            f"info keys={list(step_info.keys()) if isinstance(step_info, dict) else type(step_info)}",
+        )
+    except Exception as exc:
+        reporter.fail(
+            "环境 step",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}\n"
+            "如果这里失败而 reset 成功，往往说明动作格式、控制器或渲染后的观测回收阶段存在问题。",
+        )
+
+    try:
+        env.close()
+        reporter.pass_("环境关闭", "env.close() 成功")
+    except Exception as exc:
+        reporter.fail(
+            "环境关闭",
+            f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}",
+        )
+
+    return reporter.summary()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
