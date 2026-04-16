@@ -179,8 +179,9 @@ for episode_id in range(NUM_EPISODES):
 
         prompt = f"In: What action should the robot take to {instruction.lower()}?\nOut:"
         inputs = processor(prompt, Image.fromarray(image_for_policy).convert("RGB")).to(DEVICE)
-        if isinstance(inputs, dict) and "pixel_values" in inputs:
-            inputs["pixel_values"] = inputs["pixel_values"].to(dtype=model_dtype)
+        for k, v in list(inputs.items()):
+            if torch.is_tensor(v) and torch.is_floating_point(v):
+                inputs[k] = v.to(dtype=model_dtype)
 
         with torch.inference_mode():
             raw_action = vla.predict_action(
