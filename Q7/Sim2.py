@@ -75,12 +75,23 @@ def save_video_with_fallback(frames, output_stem):
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 model_path = "/root/autodl-tmp/vla_resources/models/openvla-7b"
 model_path = os.environ.get("OPENVLA_MODEL_PATH", model_path)
+attn_impl = os.environ.get("OPENVLA_ATTN_IMPL", "eager")
+if DEVICE.startswith("cuda"):
+    dtype_name = os.environ.get("OPENVLA_DTYPE", "float16").lower()
+    if dtype_name == "bfloat16":
+        model_dtype = torch.bfloat16
+    elif dtype_name == "float32":
+        model_dtype = torch.float32
+    else:
+        model_dtype = torch.float16
+else:
+    model_dtype = torch.float32
 processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
-        attn_implementation="sdpa",
-        torch_dtype=torch.bfloat16 if DEVICE.startswith("cuda") else torch.float32,
+        attn_implementation=attn_impl,
+        torch_dtype=model_dtype,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).to(DEVICE)
@@ -88,7 +99,7 @@ except Exception as exc:
     print("flash_attention_2 load failed, fallback to default attention:", exc)
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
-        torch_dtype=torch.bfloat16 if DEVICE.startswith("cuda") else torch.float32,
+        torch_dtype=model_dtype,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).to(DEVICE)
@@ -154,7 +165,7 @@ for episode_id in range(NUM_EPISODES):
         prompt = f"In: What action should the robot take to {instruction.lower()}?\nOut:"
         inputs = processor(prompt, Image.fromarray(image_for_policy).convert("RGB")).to(
             DEVICE,
-            dtype=torch.bfloat16 if DEVICE.startswith("cuda") else torch.float32,
+            dtype=model_dtype,
         )
 
         with torch.inference_mode():
@@ -162,6 +173,7 @@ for episode_id in range(NUM_EPISODES):
                 **inputs,
                 unnorm_key="bridge_orig",
                 do_sample=False,
+                    use_cache=False,
             )
 
         if isinstance(raw_action, torch.Tensor):
