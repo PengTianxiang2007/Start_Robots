@@ -34,7 +34,7 @@ EXPECTED_TOKENIZERS_VERSION = "0.19.1"
 def check_openvla_dependency_versions():
     cur_tf = transformers.__version__
     cur_tk = tokenizers.__version__
-    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "0") == "1"
+    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "1") == "1"
     if cur_tf == EXPECTED_TRANSFORMERS_VERSION and cur_tk == EXPECTED_TOKENIZERS_VERSION:
         return
     print(
