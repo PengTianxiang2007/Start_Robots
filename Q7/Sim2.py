@@ -1,11 +1,5 @@
 import os
 import sys
-import imageio
-import numpy as np
-import torch
-from transforms3d.euler import euler2axangle
-from PIL import Image
-from transformers import AutoModelForVision2Seq, AutoProcessor
 
 def configure_headless_render_env():
     os.environ["DISPLAY"] = ""
@@ -42,6 +36,12 @@ for extra_path in [SIMPLER_ENV_DIR, MANISKILL2_REAL2SIM_DIR]:
 
 import simpler_env
 from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
+import imageio
+import numpy as np
+import torch
+from transforms3d.euler import euler2axangle
+from PIL import Image
+from transformers import AutoModelForVision2Seq, AutoProcessor
 
 
 def save_video_with_fallback(frames, output_stem):
