@@ -15,6 +15,10 @@ if not os.path.isdir(SIMPLER_ENV_DIR):
     parent_candidate = os.path.join(os.path.dirname(CURRENT_DIR), "SimplerEnv")
     if os.path.isdir(parent_candidate):
         SIMPLER_ENV_DIR = parent_candidate
+if not os.path.isdir(SIMPLER_ENV_DIR):
+    start_robots_candidate = "/root/autodl-tmp/Start_Robots/SimplerEnv"
+    if os.path.isdir(start_robots_candidate):
+        SIMPLER_ENV_DIR = start_robots_candidate
 MANISKILL2_REAL2SIM_DIR = os.path.join(SIMPLER_ENV_DIR, "ManiSkill2_real2sim")
 for extra_path in [SIMPLER_ENV_DIR, MANISKILL2_REAL2SIM_DIR]:
     if extra_path not in sys.path:

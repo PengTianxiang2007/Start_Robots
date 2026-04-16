@@ -8,8 +8,6 @@ import numpy as np
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SIMPLER_ENV_DIR = PROJECT_ROOT / "SimplerEnv"
-MANISKILL2_REAL2SIM_DIR = SIMPLER_ENV_DIR / "ManiSkill2_real2sim"
 DEFAULT_ASSET_DIR = Path("/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data")
 DEFAULT_ENV_ID = "widowx_put_eggplant_in_basket"
 
@@ -58,11 +56,46 @@ def parse_environments_from_init(init_file: Path) -> list[str]:
     return []
 
 
+def resolve_simpler_env_dir() -> Path | None:
+    # 1) 用户显式指定优先
+    env_override = os.environ.get("SIMPLER_ENV_DIR")
+    if env_override:
+        p = Path(env_override).expanduser().resolve()
+        if (p / "simpler_env" / "__init__.py").exists():
+            return p
+
+    # 2) 常见候选目录自动探测
+    candidates = [
+        PROJECT_ROOT / "SimplerEnv",
+        PROJECT_ROOT.parent / "SimplerEnv",
+        Path.cwd() / "SimplerEnv",
+        Path.cwd().parent / "SimplerEnv",
+        Path("/root/autodl-tmp/vla_resources/SimplerEnv"),
+        Path("/root/autodl-tmp/Start_Robots/SimplerEnv"),
+    ]
+    for p in candidates:
+        p = p.expanduser().resolve()
+        if (p / "simpler_env" / "__init__.py").exists():
+            return p
+    return None
+
+
 def main() -> int:
     reporter = Reporter()
     os.environ["DISPLAY"] = ""
     os.environ["MS2_REAL2SIM_ASSET_DIR"] = str(DEFAULT_ASSET_DIR)
     runtime_probe = os.environ.get("ENABLE_RUNTIME_PROBE", "0") == "1"
+
+    simpler_env_dir = resolve_simpler_env_dir()
+    if simpler_env_dir is None:
+        reporter.fail(
+            "simpler_env 源码",
+            "未找到有效的 SimplerEnv 目录。请设置环境变量 SIMPLER_ENV_DIR，"
+            "例如: export SIMPLER_ENV_DIR=/root/autodl-tmp/vla_resources/SimplerEnv",
+        )
+        return reporter.summary()
+    maniskill2_real2sim_dir = simpler_env_dir / "ManiSkill2_real2sim"
+    reporter.pass_("simpler_env 目录", str(simpler_env_dir))
 
     if not DEFAULT_ASSET_DIR.exists():
         if runtime_probe:
@@ -80,7 +113,7 @@ def main() -> int:
     else:
         reporter.pass_("资产目录", f"检测到资产目录: {DEFAULT_ASSET_DIR}")
 
-    simpler_env_init = SIMPLER_ENV_DIR / "simpler_env" / "__init__.py"
+    simpler_env_init = simpler_env_dir / "simpler_env" / "__init__.py"
     if not simpler_env_init.exists():
         reporter.fail("simpler_env 源码", f"未找到 {simpler_env_init}")
     else:
@@ -94,7 +127,7 @@ def main() -> int:
             else:
                 reporter.fail("env_id 合法性", f"{DEFAULT_ENV_ID!r} 不在 ENVIRONMENTS 中")
 
-    for extra_path in [str(SIMPLER_ENV_DIR), str(MANISKILL2_REAL2SIM_DIR)]:
+    for extra_path in [str(simpler_env_dir), str(maniskill2_real2sim_dir)]:
         if extra_path not in sys.path:
             sys.path.insert(0, extra_path)
 
