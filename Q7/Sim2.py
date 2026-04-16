@@ -3,8 +3,6 @@ import sys
 import imageio
 import numpy as np
 import torch
-import transformers
-import tokenizers
 from transforms3d.euler import euler2axangle
 from PIL import Image
 from transformers import AutoModelForVision2Seq, AutoProcessor
@@ -26,55 +24,6 @@ def configure_headless_render_env():
 
 
 configure_headless_render_env()
-
-EXPECTED_TRANSFORMERS_VERSION = "4.40.1"
-EXPECTED_TOKENIZERS_VERSION = "0.19.1"
-
-
-def check_openvla_dependency_versions():
-    cur_tf = transformers.__version__
-    cur_tk = tokenizers.__version__
-    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "0") == "1"
-    if cur_tf == EXPECTED_TRANSFORMERS_VERSION and cur_tk == EXPECTED_TOKENIZERS_VERSION:
-        return
-    print(
-        "[WARN] OpenVLA 推荐依赖版本不匹配: "
-        f"transformers=={EXPECTED_TRANSFORMERS_VERSION}, tokenizers=={EXPECTED_TOKENIZERS_VERSION}; "
-        f"当前为 transformers=={cur_tf}, tokenizers=={cur_tk}"
-    )
-    print("[INFO] 建议执行: pip install -U transformers==4.40.1 tokenizers==0.19.1 sentencepiece")
-    if not allow_unsupported:
-        raise RuntimeError(
-            "检测到不兼容依赖版本，已提前退出以避免运行中出现 277/276 张量长度错位。"
-            " 如需强制继续，请设置 OPENVLA_ALLOW_UNSUPPORTED_DEPS=1"
-        )
-
-
-check_openvla_dependency_versions()
-
-
-def align_text_inputs_for_generation(inputs):
-    if "input_ids" not in inputs:
-        return
-    input_ids = inputs["input_ids"]
-    if "attention_mask" not in inputs:
-        inputs["attention_mask"] = torch.ones_like(input_ids, device=input_ids.device)
-        return
-    attention_mask = inputs["attention_mask"]
-    if input_ids.shape == attention_mask.shape:
-        return
-    min_len = min(input_ids.shape[-1], attention_mask.shape[-1])
-    inputs["input_ids"] = input_ids[..., :min_len]
-    inputs["attention_mask"] = attention_mask[..., :min_len]
-
-
-def predict_action_once(vla, inputs):
-    return vla.predict_action(
-        **inputs,
-        unnorm_key="bridge_orig",
-        do_sample=False,
-        use_cache=False,
-    )
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
@@ -137,23 +86,22 @@ if DEVICE.startswith("cuda"):
         model_dtype = torch.float16
 else:
     model_dtype = torch.float32
-force_slow_tokenizer = os.environ.get("OPENVLA_FORCE_SLOW_TOKENIZER", "1") == "1"
-if force_slow_tokenizer:
-    try:
-        import sentencepiece  # type: ignore  # noqa: F401
-    except Exception as exc:
-        raise RuntimeError(
-            "当前配置要求 slow tokenizer，但未检测到 sentencepiece。"
-            " 请先执行: pip install sentencepiece"
-        ) from exc
-processor = AutoProcessor.from_pretrained(
-    model_path,
-    trust_remote_code=True,
-    use_fast=not force_slow_tokenizer,
-)
+try:
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
+except Exception as exc:
+    print(
+        "[WARN] use_fast=False 初始化失败，自动回退 use_fast=True。"
+        f" 具体报错: {type(exc).__name__}: {exc}"
+    )
+    print(
+        "[INFO] 若要继续使用 slow tokenizer，可安装: pip install sentencepiece"
+    )
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=True)
 if hasattr(processor, "tokenizer"):
     if hasattr(processor.tokenizer, "legacy"):
         processor.tokenizer.legacy = True
+    if hasattr(processor.tokenizer, "padding_side"):
+        processor.tokenizer.padding_side = "left"
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
@@ -209,7 +157,6 @@ OUTPUT_DIR = os.path.join(CURRENT_DIR, "outputs", "openvla_rollouts")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 success_list = []
-debug_stage = os.environ.get("OPENVLA_DEBUG_STAGE", "1") == "1"
 
 for episode_id in range(NUM_EPISODES):
     obs, info = env.reset()
@@ -235,17 +182,13 @@ for episode_id in range(NUM_EPISODES):
         for k, v in list(inputs.items()):
             if torch.is_tensor(v) and torch.is_floating_point(v):
                 inputs[k] = v.to(dtype=model_dtype)
-        align_text_inputs_for_generation(inputs)
-        drop_attention_mask = os.environ.get("OPENVLA_DROP_ATTENTION_MASK", "1") == "1"
-        if drop_attention_mask and "attention_mask" in inputs:
-            inputs.pop("attention_mask")
-
-        if debug_stage:
-            print(f"[debug] ep={episode_id} step={step} before predict_action")
         with torch.inference_mode():
-            raw_action = predict_action_once(vla, inputs)
-        if debug_stage:
-            print(f"[debug] ep={episode_id} step={step} after predict_action")
+            raw_action = vla.predict_action(
+                **inputs,
+                unnorm_key="bridge_orig",
+                do_sample=False,
+                use_cache=False,
+            )
 
         if isinstance(raw_action, torch.Tensor):
             raw_action = raw_action.detach().cpu().numpy()
@@ -264,11 +207,7 @@ for episode_id in range(NUM_EPISODES):
         gripper = np.asarray(2.0 * (open_gripper > 0.5) - 1.0, dtype=np.float32)
         action = np.concatenate([world_vector, rot_axangle, gripper], axis=0).astype(np.float32)
 
-        if debug_stage:
-            print(f"[debug] ep={episode_id} step={step} before env.step")
         obs, reward, done, truncated, info = env.step(action)
-        if debug_stage:
-            print(f"[debug] ep={episode_id} step={step} after env.step")
         frames.append(get_image_from_maniskill2_obs_dict(env, obs))
         step += 1
 
