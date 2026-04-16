@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import ast
 from pathlib import Path
 
 import numpy as np
@@ -16,9 +17,14 @@ DEFAULT_ENV_ID = "widowx_put_eggplant_in_basket"
 class Reporter:
     def __init__(self) -> None:
         self.failures = 0
+        self.warnings = 0
 
     def pass_(self, title: str, detail: str) -> None:
         print(f"[PASS] {title}: {detail}")
+
+    def warn(self, title: str, detail: str) -> None:
+        self.warnings += 1
+        print(f"[WARN] {title}: {detail}")
 
     def fail(self, title: str, detail: str) -> None:
         self.failures += 1
@@ -27,29 +33,78 @@ class Reporter:
     def summary(self) -> int:
         print("\n===== SimplerEnv Probe Summary =====")
         print(f"failures={self.failures}")
+        print(f"warnings={self.warnings}")
         return 1 if self.failures else 0
+
+
+def parse_environments_from_init(init_file: Path) -> list[str]:
+    source = init_file.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(init_file))
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        if len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if not isinstance(target, ast.Name) or target.id != "ENVIRONMENTS":
+            continue
+        if not isinstance(node.value, ast.List):
+            continue
+        values = []
+        for item in node.value.elts:
+            if isinstance(item, ast.Constant) and isinstance(item.value, str):
+                values.append(item.value)
+        return values
+    return []
 
 
 def main() -> int:
     reporter = Reporter()
     os.environ["DISPLAY"] = ""
     os.environ["MS2_REAL2SIM_ASSET_DIR"] = str(DEFAULT_ASSET_DIR)
+    runtime_probe = os.environ.get("ENABLE_RUNTIME_PROBE", "0") == "1"
 
     if not DEFAULT_ASSET_DIR.exists():
         reporter.fail(
             "资产目录",
             f"默认资产目录不存在: {DEFAULT_ASSET_DIR}. "
-            "这会导致 simpler_env.make() 或 env.reset() 在真实仿真阶段失败。",
+            "这会导致真实仿真阶段失败。",
         )
-        return reporter.summary()
+    else:
+        reporter.pass_("资产目录", f"检测到资产目录: {DEFAULT_ASSET_DIR}")
+
+    simpler_env_init = SIMPLER_ENV_DIR / "simpler_env" / "__init__.py"
+    if not simpler_env_init.exists():
+        reporter.fail("simpler_env 源码", f"未找到 {simpler_env_init}")
+    else:
+        envs = parse_environments_from_init(simpler_env_init)
+        if len(envs) == 0:
+            reporter.fail("ENVIRONMENTS 解析", "未能从 simpler_env/__init__.py 解析出 ENVIRONMENTS")
+        else:
+            reporter.pass_("ENVIRONMENTS 解析", f"共解析到 {len(envs)} 个任务")
+            if DEFAULT_ENV_ID in envs:
+                reporter.pass_("env_id 合法性", f"{DEFAULT_ENV_ID!r} 在 ENVIRONMENTS 中")
+            else:
+                reporter.fail("env_id 合法性", f"{DEFAULT_ENV_ID!r} 不在 ENVIRONMENTS 中")
 
     for extra_path in [str(SIMPLER_ENV_DIR), str(MANISKILL2_REAL2SIM_DIR)]:
         if extra_path not in sys.path:
             sys.path.insert(0, extra_path)
 
+    if not runtime_probe:
+        reporter.warn(
+            "运行时探测已跳过",
+            "当前为无独显兼容模式。仅进行了静态检查；"
+            "如需继续检测 env.make/reset/step，请设置 ENABLE_RUNTIME_PROBE=1。",
+        )
+        return reporter.summary()
+
+    reporter.warn("运行时探测已开启", "ENABLE_RUNTIME_PROBE=1，开始执行需要图形/渲染后端的检测。")
+
     try:
         import simpler_env  # type: ignore
         from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict  # type: ignore
+        reporter.pass_("simpler_env 导入", "导入成功")
     except Exception as exc:
         reporter.fail(
             "simpler_env 导入",
