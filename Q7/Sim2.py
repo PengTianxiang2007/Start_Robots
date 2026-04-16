@@ -19,6 +19,32 @@ for extra_path in [SIMPLER_ENV_DIR, MANISKILL2_REAL2SIM_DIR]:
 import simpler_env
 from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
 
+
+def save_video_with_fallback(frames, output_stem):
+    mp4_path = output_stem + ".mp4"
+    gif_path = output_stem + ".gif"
+    errors = []
+
+    try:
+        imageio.mimsave(mp4_path, frames, fps=5)
+        return mp4_path, None, errors
+    except Exception as exc:
+        errors.append(
+            "mp4 保存失败: "
+            f"{type(exc).__name__}: {exc}. "
+            "建议安装 `imageio[ffmpeg]` 或 `imageio[pyav]`。"
+        )
+
+    try:
+        imageio.mimsave(gif_path, frames, duration=0.2)
+        return gif_path, "mp4_backend_missing", errors
+    except Exception as exc:
+        errors.append(
+            "gif 保存也失败: "
+            f"{type(exc).__name__}: {exc}."
+        )
+        return None, "all_video_backends_failed", errors
+
 """
 导入模型
 """
@@ -136,12 +162,22 @@ for episode_id in range(NUM_EPISODES):
     print("episode stats:", episode_stats)
 
     if SAVE_VIDEO and len(frames) > 0:
-        video_path = os.path.join(
+        output_stem = os.path.join(
             OUTPUT_DIR,
-            f"{env_id}_episode_{episode_id:03d}_success_{int(success)}.mp4",
+            f"{env_id}_episode_{episode_id:03d}_success_{int(success)}",
         )
-        imageio.mimsave(video_path, frames, fps=5)
-        print("saved video to:", video_path)
+        saved_path, fallback_reason, save_errors = save_video_with_fallback(frames, output_stem)
+        if saved_path is None:
+            print("video save skipped due to backend error:")
+            for err in save_errors:
+                print("-", err)
+        else:
+            if fallback_reason is None:
+                print("saved video to:", saved_path)
+            else:
+                print("saved gif fallback to:", saved_path)
+                for err in save_errors:
+                    print("-", err)
 
 env.close()
 
