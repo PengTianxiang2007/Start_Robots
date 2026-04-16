@@ -34,7 +34,7 @@ EXPECTED_TOKENIZERS_VERSION = "0.19.1"
 def check_openvla_dependency_versions():
     cur_tf = transformers.__version__
     cur_tk = tokenizers.__version__
-    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "1") == "1"
+    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "0") == "1"
     if cur_tf == EXPECTED_TRANSFORMERS_VERSION and cur_tk == EXPECTED_TOKENIZERS_VERSION:
         return
     print(
@@ -209,6 +209,7 @@ OUTPUT_DIR = os.path.join(CURRENT_DIR, "outputs", "openvla_rollouts")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 success_list = []
+debug_stage = os.environ.get("OPENVLA_DEBUG_STAGE", "1") == "1"
 
 for episode_id in range(NUM_EPISODES):
     obs, info = env.reset()
@@ -239,8 +240,12 @@ for episode_id in range(NUM_EPISODES):
         if drop_attention_mask and "attention_mask" in inputs:
             inputs.pop("attention_mask")
 
+        if debug_stage:
+            print(f"[debug] ep={episode_id} step={step} before predict_action")
         with torch.inference_mode():
             raw_action = predict_action_once(vla, inputs)
+        if debug_stage:
+            print(f"[debug] ep={episode_id} step={step} after predict_action")
 
         if isinstance(raw_action, torch.Tensor):
             raw_action = raw_action.detach().cpu().numpy()
@@ -259,7 +264,11 @@ for episode_id in range(NUM_EPISODES):
         gripper = np.asarray(2.0 * (open_gripper > 0.5) - 1.0, dtype=np.float32)
         action = np.concatenate([world_vector, rot_axangle, gripper], axis=0).astype(np.float32)
 
+        if debug_stage:
+            print(f"[debug] ep={episode_id} step={step} before env.step")
         obs, reward, done, truncated, info = env.step(action)
+        if debug_stage:
+            print(f"[debug] ep={episode_id} step={step} after env.step")
         frames.append(get_image_from_maniskill2_obs_dict(env, obs))
         step += 1
 
