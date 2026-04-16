@@ -172,7 +172,7 @@ for episode_id in range(NUM_EPISODES):
             dtype=np.uint8,
         )
 
-        prompt = f"In: What action should the robot take to {instruction.lower()}?\nOut:"
+        prompt = f"In: What action should the robot take to {instruction.lower()}?\nOut: "
         inputs = processor(prompt, Image.fromarray(image_for_policy).convert("RGB")).to(DEVICE)
         for k, v in list(inputs.items()):
             if torch.is_tensor(v) and torch.is_floating_point(v):
