@@ -65,11 +65,18 @@ def main() -> int:
     runtime_probe = os.environ.get("ENABLE_RUNTIME_PROBE", "0") == "1"
 
     if not DEFAULT_ASSET_DIR.exists():
-        reporter.fail(
-            "资产目录",
-            f"默认资产目录不存在: {DEFAULT_ASSET_DIR}. "
-            "这会导致真实仿真阶段失败。",
-        )
+        if runtime_probe:
+            reporter.fail(
+                "资产目录",
+                f"默认资产目录不存在: {DEFAULT_ASSET_DIR}. "
+                "这会导致真实仿真阶段失败。",
+            )
+        else:
+            reporter.warn(
+                "资产目录",
+                f"默认资产目录不存在: {DEFAULT_ASSET_DIR}。"
+                "当前是无独显兼容模式，仅做静态检查，不阻断执行。",
+            )
     else:
         reporter.pass_("资产目录", f"检测到资产目录: {DEFAULT_ASSET_DIR}")
 
