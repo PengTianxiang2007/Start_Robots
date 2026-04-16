@@ -86,7 +86,17 @@ if DEVICE.startswith("cuda"):
         model_dtype = torch.float16
 else:
     model_dtype = torch.float32
-processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
+try:
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
+except Exception as exc:
+    print(
+        "[WARN] use_fast=False 初始化失败，自动回退 use_fast=True。"
+        f" 具体报错: {type(exc).__name__}: {exc}"
+    )
+    print(
+        "[INFO] 若要继续使用 slow tokenizer，可安装: pip install sentencepiece"
+    )
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=True)
 if hasattr(processor, "tokenizer"):
     if hasattr(processor.tokenizer, "legacy"):
         processor.tokenizer.legacy = True
