@@ -67,6 +67,30 @@ def align_text_inputs_for_generation(inputs):
     inputs["input_ids"] = input_ids[..., :min_len]
     inputs["attention_mask"] = attention_mask[..., :min_len]
 
+
+def predict_action_with_retry(vla, inputs):
+    try:
+        return vla.predict_action(
+            **inputs,
+            unnorm_key="bridge_orig",
+            do_sample=False,
+            use_cache=False,
+        )
+    except RuntimeError as exc:
+        msg = str(exc)
+        if "size of tensor a" in msg and "size of tensor b" in msg:
+            retry_inputs = dict(inputs)
+            if "attention_mask" in retry_inputs:
+                retry_inputs.pop("attention_mask")
+                print("[WARN] 命中 attention mask 长度错位，已去除 attention_mask 自动重试一次。")
+                return vla.predict_action(
+                    **retry_inputs,
+                    unnorm_key="bridge_orig",
+                    do_sample=False,
+                    use_cache=False,
+                )
+        raise
+
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
 if not os.path.isdir(SIMPLER_ENV_DIR):
@@ -228,12 +252,7 @@ for episode_id in range(NUM_EPISODES):
         align_text_inputs_for_generation(inputs)
 
         with torch.inference_mode():
-            raw_action = vla.predict_action(
-                **inputs,
-                unnorm_key="bridge_orig",
-                do_sample=False,
-                    use_cache=False,
-            )
+            raw_action = predict_action_with_retry(vla, inputs)
 
         if isinstance(raw_action, torch.Tensor):
             raw_action = raw_action.detach().cpu().numpy()
