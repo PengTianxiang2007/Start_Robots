@@ -52,6 +52,21 @@ def check_openvla_dependency_versions():
 
 check_openvla_dependency_versions()
 
+
+def align_text_inputs_for_generation(inputs):
+    if "input_ids" not in inputs:
+        return
+    input_ids = inputs["input_ids"]
+    if "attention_mask" not in inputs:
+        inputs["attention_mask"] = torch.ones_like(input_ids, device=input_ids.device)
+        return
+    attention_mask = inputs["attention_mask"]
+    if input_ids.shape == attention_mask.shape:
+        return
+    min_len = min(input_ids.shape[-1], attention_mask.shape[-1])
+    inputs["input_ids"] = input_ids[..., :min_len]
+    inputs["attention_mask"] = attention_mask[..., :min_len]
+
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
 if not os.path.isdir(SIMPLER_ENV_DIR):
@@ -210,6 +225,7 @@ for episode_id in range(NUM_EPISODES):
         for k, v in list(inputs.items()):
             if torch.is_tensor(v) and torch.is_floating_point(v):
                 inputs[k] = v.to(dtype=model_dtype)
+        align_text_inputs_for_generation(inputs)
 
         with torch.inference_mode():
             raw_action = vla.predict_action(
