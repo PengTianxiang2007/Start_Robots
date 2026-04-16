@@ -3,6 +3,8 @@ import sys
 import imageio
 import numpy as np
 import torch
+import transformers
+import tokenizers
 from transforms3d.euler import euler2axangle
 from PIL import Image
 from transformers import AutoModelForVision2Seq, AutoProcessor
@@ -24,6 +26,31 @@ def configure_headless_render_env():
 
 
 configure_headless_render_env()
+
+EXPECTED_TRANSFORMERS_VERSION = "4.40.1"
+EXPECTED_TOKENIZERS_VERSION = "0.19.1"
+
+
+def check_openvla_dependency_versions():
+    cur_tf = transformers.__version__
+    cur_tk = tokenizers.__version__
+    allow_unsupported = os.environ.get("OPENVLA_ALLOW_UNSUPPORTED_DEPS", "0") == "1"
+    if cur_tf == EXPECTED_TRANSFORMERS_VERSION and cur_tk == EXPECTED_TOKENIZERS_VERSION:
+        return
+    print(
+        "[WARN] OpenVLA 推荐依赖版本不匹配: "
+        f"transformers=={EXPECTED_TRANSFORMERS_VERSION}, tokenizers=={EXPECTED_TOKENIZERS_VERSION}; "
+        f"当前为 transformers=={cur_tf}, tokenizers=={cur_tk}"
+    )
+    print("[INFO] 建议执行: pip install -U transformers==4.40.1 tokenizers==0.19.1 sentencepiece")
+    if not allow_unsupported:
+        raise RuntimeError(
+            "检测到不兼容依赖版本，已提前退出以避免运行中出现 277/276 张量长度错位。"
+            " 如需强制继续，请设置 OPENVLA_ALLOW_UNSUPPORTED_DEPS=1"
+        )
+
+
+check_openvla_dependency_versions()
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
