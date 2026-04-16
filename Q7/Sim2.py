@@ -97,11 +97,6 @@ except Exception as exc:
         "[INFO] 若要继续使用 slow tokenizer，可安装: pip install sentencepiece"
     )
     processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=True)
-if hasattr(processor, "tokenizer"):
-    if hasattr(processor.tokenizer, "legacy"):
-        processor.tokenizer.legacy = True
-    if hasattr(processor.tokenizer, "padding_side"):
-        processor.tokenizer.padding_side = "left"
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
