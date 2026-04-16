@@ -86,7 +86,12 @@ if DEVICE.startswith("cuda"):
         model_dtype = torch.float16
 else:
     model_dtype = torch.float32
-processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
+if hasattr(processor, "tokenizer"):
+    if hasattr(processor.tokenizer, "legacy"):
+        processor.tokenizer.legacy = True
+    if hasattr(processor.tokenizer, "padding_side"):
+        processor.tokenizer.padding_side = "left"
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
         model_path,
@@ -163,10 +168,9 @@ for episode_id in range(NUM_EPISODES):
         )
 
         prompt = f"In: What action should the robot take to {instruction.lower()}?\nOut:"
-        inputs = processor(prompt, Image.fromarray(image_for_policy).convert("RGB")).to(
-            DEVICE,
-            dtype=model_dtype,
-        )
+        inputs = processor(prompt, Image.fromarray(image_for_policy).convert("RGB")).to(DEVICE)
+        if isinstance(inputs, dict) and "pixel_values" in inputs:
+            inputs["pixel_values"] = inputs["pixel_values"].to(dtype=model_dtype)
 
         with torch.inference_mode():
             raw_action = vla.predict_action(
