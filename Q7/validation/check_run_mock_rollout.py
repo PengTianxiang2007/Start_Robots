@@ -7,7 +7,7 @@ import torch
 from PIL import Image
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "openvla_rollouts"
 
 

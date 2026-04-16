@@ -57,7 +57,8 @@ def save_video_with_fallback(frames, output_stem):
 导入模型
 """
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
-model_path = os.environ.get("OPENVLA_MODEL_PATH", "/root/autodl-tmp/vla_resources/models/openvla-7b")
+model_path = "/root/autodl-tmp/vla_resources/models/openvla-7b"
+model_path = os.environ.get("OPENVLA_MODEL_PATH", model_path)
 processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
@@ -80,10 +81,10 @@ vla.eval()
 """
 导入benchmark
 """
-os.environ.setdefault(
-    "MS2_REAL2SIM_ASSET_DIR",
-    "/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data",
-)
+_asset_dir_override = os.environ.get("MS2_REAL2SIM_ASSET_DIR")
+os.environ["MS2_REAL2SIM_ASSET_DIR"] = "/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data"
+if _asset_dir_override:
+    os.environ["MS2_REAL2SIM_ASSET_DIR"] = _asset_dir_override
 env_id = os.environ.get("SIMPLER_ENV_ID", "widowx_put_eggplant_in_basket")
 
 # 这里不能继续向 simpler_env.make() 传入 obs_mode / control_mode / render_mode，

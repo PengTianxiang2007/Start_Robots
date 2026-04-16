@@ -5,8 +5,10 @@ import sys
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUN_PY = PROJECT_ROOT / "run.py"
+if not RUN_PY.exists():
+    RUN_PY = PROJECT_ROOT / "Sim2.py"
 SIMPLER_ENV_DIR = PROJECT_ROOT / "SimplerEnv"
 MANISKILL2_REAL2SIM_DIR = SIMPLER_ENV_DIR / "ManiSkill2_real2sim"
 
@@ -95,13 +97,13 @@ def main() -> int:
     reporter = Reporter()
 
     if not RUN_PY.exists():
-        reporter.fail("run.py 存在性", f"未找到 {RUN_PY}")
+        reporter.fail("目标脚本存在性", f"未找到 {PROJECT_ROOT / 'run.py'} 或 {PROJECT_ROOT / 'Sim2.py'}")
         return reporter.summary()
 
     source = RUN_PY.read_text(encoding="utf-8")
     try:
         tree = ast.parse(source, filename=str(RUN_PY))
-        reporter.ok("Python 语法", "run.py 可以被 AST 正常解析")
+        reporter.ok("Python 语法", f"{RUN_PY.name} 可以被 AST 正常解析")
     except SyntaxError as exc:
         reporter.fail("Python 语法", f"{exc.msg} at line {exc.lineno}, column {exc.offset}")
         return reporter.summary()
@@ -116,11 +118,11 @@ def main() -> int:
         else:
             reporter.fail(
                 "模型路径",
-                f"run.py 中的 model_path={model_path!r} 不存在。"
+                f"{RUN_PY.name} 中的 model_path={model_path!r} 不存在。"
                 " 如果你在 AutoDL 上运行，这通常意味着模型尚未下载到指定目录。",
             )
     else:
-        reporter.fail("模型路径", "未能在 run.py 顶层找到字符串变量 model_path")
+        reporter.fail("模型路径", f"未能在 {RUN_PY.name} 顶层找到字符串变量 model_path")
 
     asset_dir = None
     for node in ast.walk(tree):
@@ -187,7 +189,7 @@ def main() -> int:
         else:
             reporter.fail("视频导出依赖", "SAVE_VIDEO=True 但未检测到 imageio_ffmpeg；导出 mp4 可能失败")
     else:
-        reporter.warn("视频导出依赖", "run.py 当前未检测到 imageio.mimsave 调用")
+        reporter.warn("视频导出依赖", f"{RUN_PY.name} 当前未检测到 imageio.mimsave 调用")
 
     for extra_path in [str(SIMPLER_ENV_DIR), str(MANISKILL2_REAL2SIM_DIR)]:
         if extra_path not in sys.path:
@@ -210,7 +212,7 @@ def main() -> int:
         )
 
     if find_call_line(tree, "make") is not None and "simpler_env.make(env_id)" in source:
-        reporter.ok("Benchmark API", "run.py 使用 simpler_env.make(env_id) 构建预封装环境")
+        reporter.ok("Benchmark API", f"{RUN_PY.name} 使用 simpler_env.make(env_id) 构建预封装环境")
     else:
         reporter.fail("Benchmark API", "未检测到 simpler_env.make(env_id) 这种当前仓库支持的调用方式")
 

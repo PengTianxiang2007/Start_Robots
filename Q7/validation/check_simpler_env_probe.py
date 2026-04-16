@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ASSET_DIR = Path("/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data")
 DEFAULT_ENV_ID = "widowx_put_eggplant_in_basket"
 
