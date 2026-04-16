@@ -10,7 +10,11 @@ from transformers import AutoModelForVision2Seq, AutoProcessor
 os.environ["DISPLAY"] = ""
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-SIMPLER_ENV_DIR = os.path.join(CURRENT_DIR, "SimplerEnv")
+SIMPLER_ENV_DIR = os.environ.get("SIMPLER_ENV_DIR", os.path.join(CURRENT_DIR, "SimplerEnv"))
+if not os.path.isdir(SIMPLER_ENV_DIR):
+    parent_candidate = os.path.join(os.path.dirname(CURRENT_DIR), "SimplerEnv")
+    if os.path.isdir(parent_candidate):
+        SIMPLER_ENV_DIR = parent_candidate
 MANISKILL2_REAL2SIM_DIR = os.path.join(SIMPLER_ENV_DIR, "ManiSkill2_real2sim")
 for extra_path in [SIMPLER_ENV_DIR, MANISKILL2_REAL2SIM_DIR]:
     if extra_path not in sys.path:
@@ -49,7 +53,7 @@ def save_video_with_fallback(frames, output_stem):
 导入模型
 """
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
-model_path = "/root/autodl-tmp/vla_resources/models/openvla-7b"
+model_path = os.environ.get("OPENVLA_MODEL_PATH", "/root/autodl-tmp/vla_resources/models/openvla-7b")
 processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
 try:
     vla = AutoModelForVision2Seq.from_pretrained(
@@ -72,8 +76,11 @@ vla.eval()
 """
 导入benchmark
 """
-os.environ["MS2_REAL2SIM_ASSET_DIR"] = "/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data"
-env_id = "widowx_put_eggplant_in_basket"
+os.environ.setdefault(
+    "MS2_REAL2SIM_ASSET_DIR",
+    "/root/autodl-tmp/vla_resources/SimplerEnv/ManiSkill2_real2sim/data",
+)
+env_id = os.environ.get("SIMPLER_ENV_ID", "widowx_put_eggplant_in_basket")
 
 # 这里不能继续向 simpler_env.make() 传入 obs_mode / control_mode / render_mode，
 # 因为当前仓库里的 simpler_env.make(task_name) 真实签名只接受任务名，
@@ -123,6 +130,8 @@ for episode_id in range(NUM_EPISODES):
                 do_sample=False,
             )
 
+        if isinstance(raw_action, torch.Tensor):
+            raw_action = raw_action.detach().cpu().numpy()
         raw_action = np.asarray(raw_action, dtype=np.float32).reshape(-1)
         if raw_action.shape[0] != 7:
             raise ValueError(f"OpenVLA action dimension should be 7, but got shape {raw_action.shape}")
